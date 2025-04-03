@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>数字水印工具</title>
+    <style>
+        :root {
+            --primary-color: #3498db;
+            --primary-hover: #2980b9;
+            --success-color: #2ecc71;
+            --success-hover: #27ae60;
+            --warning-color: #e74c3c;
+            --info-color: #3498db;
+            --bg-color: #f9f9f9;
+            --text-color: #333;
+            --border-color: #ddd;
+            --shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        body {
+            font-family: 'Arial', sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+            color: var(--text-color);
+            background-color: #f5f5f5;
+        }
+        
+        h1, h2 {
+            color: #2c3e50;
+            margin-top: 0;
+        }
+        
+        .container {
+            background-color: white;
+            border-radius: 8px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: var(--shadow);
+        }
+        
+        textarea {
+            width: 100%;
+            min-height: 100px;
+            padding: 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            font-family: monospace;
+            margin-bottom: 15px;
+            resize: vertical;
+            transition: border 0.3s;
+			box-sizing: border-box;
+        }
+        
+        textarea:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+        }
+        
+        button {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-right: 10px;
+            transition: background-color 0.3s;
+        }
+        
+        button:hover {
+            background-color: var(--primary-hover);
+        }
+        
+        .copy-btn {
+            background-color: var(--success-color);
+        }
+        
+        .copy-btn:hover {
+            background-color: var(--success-hover);
+        }
+        
+        .output-container {
+            margin-top: 20px;
+            border-radius: 6px;
+            overflow: hidden;
+        }
+        
+        .output-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: #eee;
+            padding: 10px 15px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .output-content {
+            background-color: #f8f9fa;
+            padding: 15px;
+            word-break: break-all;
+            font-family: monospace;
+            min-height: 50px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .warning {
+            color: var(--warning-color);
+            font-weight: bold;
+            margin-top: 15px;
+        }
+        
+        .info {
+            color: var(--info-color);
+            margin-top: 15px;
+        }
+        
+        /* Switch 开关样式 */
+        .switch-container {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+			margin-top:20px;
+        }
+        
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 34px;
+            margin-right: 10px;
+        }
+        
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 34px;
+        }
+        
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 26px;
+            width: 26px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        
+        input:checked + .slider {
+            background-color: var(--success-color);
+        }
+        
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
+        
+        .switch-label {
+            font-weight: bold;
+            color: #555;
+        }
+        
+        .button-group {
+            margin-top: 15px;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        /* 响应式调整 */
+        @media (max-width: 600px) {
+            .container {
+                padding: 15px;
+            }
+            
+            button {
+                padding: 8px 15px;
+                margin-bottom: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>数字水印工具</h1>
+        <p>防AI洗稿,你的专属数字水印工具</p>
+    </div>
+    
+    <div class="container">
+        <h2>编码信息</h2>
+        <p>在下方输入要隐藏的数字水印信息：</p>
+        
+        <label for="secretMessage">数字水印：</label>
+        <textarea class="secretMessage-content" id="secretMessage" placeholder="输入数字水印信息..."></textarea>
+        
+        <label for="coverText">正常文本：</label>
+        <textarea id="coverText" placeholder="输入用于数字水印的普通文本..."></textarea>
+        
+        <div class="button-group">
+            <button onclick="processMessage()">处理信息</button>
+            <button class="copy-btn" onclick="copyToClipboard('outputContent')">复制结果</button>
+        </div>
+        
+        <div class="switch-container">
+            <label class="switch">
+                <input type="checkbox" id="viewModeSwitch">
+                <span class="slider"></span>
+            </label>
+            <span class="switch-label" id="switchLabel">显示编码信息</span>
+        </div>
+        
+        <div class="output-container">
+            <div class="output-header">
+                <span id="outputHeader">编码结果</span>
+            </div>
+            <div class="output-content" id="outputContent"></div>
+        </div>
+        
+        <div class="tab-content active" id="encodedInfo">
+            <p class="info">编码后的文本看起来和普通文本一样，但包含了隐藏信息。</p>
+        </div>
+    </div>
+    
+    
+    <script>
+        // Unicode 变体选择符
+        const VS1 = '\uFE00'; // 0
+        const VS2 = '\uFE01'; // 1
+        const VS3 = '\uFE02'; // 分隔符
+        let lastEncodedText = '';
+        
+        // 初始化页面
+        document.addEventListener('DOMContentLoaded', function() {
+            const switchElement = document.getElementById('viewModeSwitch');
+            const switchLabel = document.getElementById('switchLabel');
+            const outputHeader = document.getElementById('outputHeader');
+            
+            switchElement.addEventListener('change', function() {
+                if (this.checked) {
+                    switchLabel.textContent = '显示解码信息';
+                    outputHeader.textContent = '解码结果';
+                    document.getElementById('encodedInfo').classList.remove('active');
+                    decodeAndDisplay();
+                } else {
+                    switchLabel.textContent = '显示编码信息';
+                    outputHeader.textContent = '编码结果';
+                    document.getElementById('encodedInfo').classList.add('active');
+                    document.getElementById('outputContent').textContent = lastEncodedText;
+                }
+            });
+        });
+        
+        // 处理信息（编码和解码）
+        function processMessage() {
+            const secretMessage = document.getElementById('secretMessage').value;
+            const coverText = document.getElementById('coverText').value;
+            
+            if (!secretMessage) {
+                alert('请输入要隐藏的秘密信息');
+                return;
+            }
+            
+            // 编码信息
+            lastEncodedText = encodeMessage(secretMessage, coverText);
+            document.getElementById('outputContent').textContent = lastEncodedText;
+            
+            // 如果当前是解码视图，也显示解码结果
+            if (document.getElementById('viewModeSwitch').checked) {
+                decodeAndDisplay();
+            }
+        }
+        
+        // 编码信息到掩护文本中
+        function encodeMessage(secretMessage, coverText) {
+            // 将秘密信息转换为UTF-8字节数组
+            const encoder = new TextEncoder();
+            const bytes = encoder.encode(secretMessage);
+            
+            // 将字节数组转换为二进制字符串
+            let binary = '';
+            for (let i = 0; i < bytes.length; i++) {
+                binary += bytes[i].toString(2).padStart(8, '0');
+            }
+            
+            let encodedText = '';
+            let binaryIndex = 0;
+            let coverIndex = 0;
+            
+            // 首先添加分隔符和长度信息
+            const lengthBinary = bytes.length.toString(2).padStart(32, '0');
+            encodedText += VS3 + lengthBinary.split('').map(bit => bit === '1' ? VS2 : VS1).join('') + VS3;
+            
+            // 将二进制数据编码到掩护文本中
+            while (binaryIndex < binary.length) {
+                // 添加掩护文本字符
+                if (coverIndex < coverText.length) {
+                    encodedText += coverText[coverIndex];
+                    coverIndex++;
+                }
+                
+                // 添加隐藏的二进制位
+                if (binaryIndex < binary.length) {
+                    encodedText += binary[binaryIndex] === '1' ? VS2 : VS1;
+                    binaryIndex++;
+                }
+            }
+            
+            // 添加剩余的掩护文本
+            if (coverIndex < coverText.length) {
+                encodedText += coverText.substring(coverIndex);
+            }
+            
+            return encodedText;
+        }
+        
+        // 解码并显示结果
+        function decodeAndDisplay() {
+            const encodedText = lastEncodedText || document.getElementById('outputContent').textContent;
+            
+            if (!encodedText) {
+                document.getElementById('outputContent').textContent = '没有可解码的内容';
+                return;
+            }
+            
+            const decodedMessage = decodeMessage(encodedText);
+            document.getElementById('outputContent').textContent = decodedMessage;
+        }
+        
+        // 从文本中解码信息
+        function decodeMessage(encodedText) {
+            // 查找分隔符
+            const firstVS3 = encodedText.indexOf(VS3);
+            if (firstVS3 === -1) {
+                return '未检测到隐藏信息';
+            }
+            
+            // 提取长度信息
+            let lengthBinary = '';
+            let pos = firstVS3 + 1;
+            
+            while (pos < encodedText.length && encodedText[pos] !== VS3) {
+                if (encodedText[pos] === VS1) {
+                    lengthBinary += '0';
+                } else if (encodedText[pos] === VS2) {
+                    lengthBinary += '1';
+                }
+                pos++;
+            }
+            
+            if (pos >= encodedText.length || encodedText[pos] !== VS3) {
+                return '无效的隐藏信息格式';
+            }
+            
+            const byteLength = parseInt(lengthBinary, 2);
+            pos++; // 跳过第二个VS3
+            
+            // 提取消息二进制数据
+            let binary = '';
+            let bitsCollected = 0;
+            const totalBitsNeeded = byteLength * 8;
+            
+            while (pos < encodedText.length && bitsCollected < totalBitsNeeded) {
+                const char = encodedText[pos];
+                if (char === VS1) {
+                    binary += '0';
+                    bitsCollected++;
+                } else if (char === VS2) {
+                    binary += '1';
+                    bitsCollected++;
+                }
+                pos++;
+            }
+            
+            if (bitsCollected < totalBitsNeeded) {
+                return '隐藏信息不完整';
+            }
+            
+            // 将二进制转换为字节数组
+            const bytes = [];
+            for (let i = 0; i < binary.length; i += 8) {
+                const byteStr = binary.substr(i, 8);
+                bytes.push(parseInt(byteStr, 2));
+            }
+            
+            // 将字节数组解码为文本
+            const decoder = new TextDecoder();
+            return decoder.decode(new Uint8Array(bytes));
+        }
+        
+        // 复制文本到剪贴板
+        function copyToClipboard(elementId) {
+            const element = document.getElementById(elementId);
+            if (!element || !element.textContent) {
+                alert('没有可复制的内容');
+                return;
+            }
+            
+            navigator.clipboard.writeText(element.textContent)
+                .then(() => alert('已复制到剪贴板'))
+                .catch(err => alert('复制失败: ' + err));
+        }
+    </script>
+</body>
+</html>
